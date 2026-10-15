@@ -1,0 +1,10 @@
+import {test} from 'node:test';
+import assert from 'node:assert/strict';
+import {BreathDetector,coverPoint} from '../logic.js';
+const breath={openness:.16,width:.23,pucker:.7};
+test('短暂张嘴不触发，持续收唇才触发',()=>{const d=new BreathDetector();assert.equal(d.update(breath,0,50),false);assert.equal(d.update(breath,200,50),false);assert.equal(d.update(breath,400,50),false);assert.equal(d.update(breath,600,50),true);});
+test('普通张嘴不当作吹气',()=>{const d=new BreathDetector();for(let t=0;t<2000;t+=100)assert.equal(d.update({openness:.5,width:.3,pucker:.02},t,50),false);});
+test('人脸丢失后持续时间归零',()=>{const d=new BreathDetector();d.update(breath,0,50);d.update(breath,300,50);d.update(null,400,50);assert.equal(d.update(breath,600,50),false);assert.equal(d.progress,0);});
+test('推理长时间中断不累计吹气时长',()=>{const d=new BreathDetector();d.update(breath,0,50);assert.equal(d.update(breath,10000,50),false);});
+test('高灵敏度缩短触发时间',()=>{const a=new BreathDetector(),b=new BreathDetector();a.update(breath,0,100);b.update(breath,0,0);assert.equal(a.update(breath,300,100),true);assert.equal(b.update(breath,300,0),false);});
+test('镜像与 cover 裁切坐标保持对应',()=>{assert.deepEqual(coverPoint({x:.5,y:.5},640,480,1000,600),{x:500,y:300});assert.deepEqual(coverPoint({x:0,y:0},640,480,1000,600),{x:1000,y:-75});assert.deepEqual(coverPoint({x:1,y:1},640,480,600,1000),{x:-366.66666666666674,y:1000});});
